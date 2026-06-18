@@ -12,7 +12,7 @@ if command -v zsh-ai &>/dev/null; then
     if zsh-ai detect "$input" 2>/dev/null; then
       BUFFER=
       zle -I
-      zsh-ai process "${input}"
+      zsh-ai process "${(q)input}"
       zle .reset-prompt
     else
       zle .accept-line
