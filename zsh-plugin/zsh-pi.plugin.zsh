@@ -1,16 +1,7 @@
 # zsh-pi.plugin.zsh — Oh My Zsh plugin
 if command -v zsh-pi &>/dev/null; then
-  __zsh_pi_accept_line() {
-    local input="$BUFFER"
-    [[ -z "$input" ]] && { zle .accept-line; return; }
-    if zsh-pi detect "$input" 2>/dev/null; then
-      BUFFER="zsh-pi process ${(q)input}"
-      zle .accept-line
-    else
-      zle .accept-line
-    fi
-  }
-  zle -N accept-line __zsh_pi_accept_line
+  # 不拦截 accept-line：先当作正常命令执行
+  # 只有命令不存在时，command_not_found_handler 才会触发 AI
 
   typeset -g _ZSH_PI_SESSION_STARTED=0
   __zsh_pi_precmd() {
@@ -27,16 +18,19 @@ if command -v zsh-pi &>/dev/null; then
     fi
   fi
   function command_not_found_handler() {
-    if zsh-pi detect "$*" 2>/dev/null; then
-      zsh-pi process "$*"
-      return $?
+    # 先去执行 AI 处理
+    zsh-pi process "$*"
+    local ret=$?
+    if [[ $ret -ne 0 ]] || typeset -f __zsh_pi_cnf_backup &>/dev/null; then
+      # AI 处理失败，走原有 handler
+      if typeset -f __zsh_pi_cnf_backup &>/dev/null; then
+        __zsh_pi_cnf_backup "$@"
+      else
+        echo "zsh: command not found: $*" >&2
+        return 127
+      fi
     fi
-    if typeset -f __zsh_pi_cnf_backup &>/dev/null; then
-      __zsh_pi_cnf_backup "$@"
-    else
-      echo "zsh: command not found: $*" >&2
-      return 127
-    fi
+    return 0
   }
 
   _zsh_pi_completion() {

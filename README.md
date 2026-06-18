@@ -6,9 +6,9 @@
 
 ```
 $ 帮我列出当前目录的文件
-$ zsh-pi process 帮我列出当前目录的文件    ← ZLE Widget 自动拦截
-⠙ 思考中                                  ← spinner 动画
-🔧 bash                                    ← 工具调用
+zsh: command not found: 帮我列出当前目录的文件    ← 命令不存在，自动触发 AI
+⠙ 思考中                                          ← spinner 动画
+🔧 bash                                            ← 工具调用
   { "command": "ls -la" }
 📄 total 24
   drwxr-xr-x ...
@@ -22,8 +22,8 @@ $ zsh-pi process 帮我列出当前目录的文件    ← ZLE Widget 自动拦�
 > cd src
 ```
 
-- 输入 **自然语言** → 自动调用 AI 处理（展示 spinner、工具调用链、最终结果）
 - 输入 **shell 命令** → 正常执行，完全不经过 AI
+- 输入 **自然语言** → 命令不存在，自动触发 AI 处理（展示 spinner、工具调用链、最终结果）
 - 输出支持 **Markdown 渲染**（表格对齐、粗体、代码块）
 
 ## 安装
@@ -95,14 +95,14 @@ source ~/.zshrc
 ### 确认生效
 
 ```bash
-# 输入自然语言 → 应自动触发 AI
+# 输入自然语言 → 命令不存在，自动触发 AI
 你好
 
-# 正常命令 → 应正常执行，不经过 AI
+# 正常命令 → 正常执行，不经过 AI
 ls
 pwd
 
-# 命令行检测
+# 手动检测
 zsh-pi detect 你好    # exit 0（自然语言）
 zsh-pi detect ls      # exit 1（命令）
 ```
@@ -112,9 +112,11 @@ zsh-pi detect ls      # exit 1（命令）
 ## 使用
 
 ```bash
-# 在 ZSH 中直接输入自然语言（由 ZLE Widget 自动拦截）
+# 在 ZSH 中直接输入自然语言（命令不存在 → 自动触发 AI）
 # $ 帮我列出当前目录的文件
+# zsh: command not found: 帮我列出当前目录的文件
 # → 自动调用 zsh-pi process "帮我列出当前目录的文件"
+# → AI 处理并返回结果
 
 # 或手动调用
 zsh-pi process "列出当前目录的文件"
@@ -141,8 +143,8 @@ zsh-pi process "..." --provider deepseek --model deepseek-v4-flash
 
 ## 工作原理
 
-1. **ZLE Widget** 拦截 `accept-line`，调用 `zsh-pi detect` 判断输入是否为自然语言
-2. 若为自然语言 → 替换 `$BUFFER` 为 `zsh-pi process <输入>` 并执行
+1. **正常执行优先**：不拦截 `accept-line`，输入先当作 shell 命令执行
+2. **命令不存在时自动触发 AI**：zsh 的 `command_not_found_handler` 捕获不存在命令，调用 `zsh-pi process` 交给 AI 处理
 3. `zsh-pi process` 调用 `pi --mode json -p`，流式解析 JSONL 事件
 4. 终端输出 spinner 动画 → 工具调用 → 工具结果 → AI 回复
 5. 回复内容经过 Markdown→ANSI 渲染（表格对齐、粗体、代码块等）

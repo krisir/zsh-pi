@@ -4,27 +4,47 @@
  * 判断输入文本是否是自然语言（而非 shell 命令）。
  * 同步，毫秒级返回。
  */
+
+import { execSync } from 'child_process';
+
+/**
+ * 检查命令是否存在于系统 PATH 中。
+ * 使用 `command -v` 而非硬编码列表，自动适应用户环境。
+ */
+function commandExists(cmd) {
+  try {
+    execSync(`command -v ${cmd}`, { stdio: 'ignore', timeout: 500 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 检查文本中是否包含非 ASCII 字符（中文等）。
+ */
+function hasNonAscii(text) {
+  return /[^\x20-\x7E]/.test(text);
+}
+
 export function isNaturalLanguage(text) {
   if (!text || text.trim().length === 0) return false;
   const trimmed = text.trim();
-
-  // 获取第一个单词（命令名）
   const words = trimmed.split(/\s+/);
   const cmdName = words[0];
 
-  // 如果命令名包含非 ASCII（中文等）→ 几乎肯定是自然语言
-  if (/[^\x20-\x7E]/.test(cmdName)) return true;
+  // 首词就是中文 → 自然语言（如 "列出文件"、"帮我安装git"）
+  if (hasNonAscii(cmdName)) return true;
 
-  // 如果命令名像文件路径或包含扩展名 → 是命令
+  // 像文件路径或包含扩展名 → 命令
   if (cmdName.includes('/') || cmdName.includes('.')) return false;
 
-  // 单词数 ≥ 3 → 可能是自然语言
-  if (words.length >= 3) {
-    // 检查是否包含命令特征
-    if (!/[-\/.\|><&;]/.test(trimmed)) {
-      return true;
-    }
-  }
+  // 首词后面有中文 → 虽然是已知命令但实际上是提问（如 "gh auth login 是什么意思"）
+  if (words.length > 1 && words.slice(1).some(hasNonAscii)) return true;
 
-  return false;
+  // 首词是系统中已安装的命令 → 肯定是命令，不拦截
+  if (commandExists(cmdName)) return false;
+
+  // 命令不存在 → 很可能是自然语言
+  return true;
 }
