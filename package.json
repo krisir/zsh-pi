@@ -1,6 +1,6 @@
 {
   "name": "zsh-pi",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "ZSH 自然语言 AI 助手 — 输入自然语言，命令找不到时自动触发 AI 处理（基于 pi-coding-agent）",
   "type": "module",
   "bin": {
