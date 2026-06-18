@@ -151,15 +151,18 @@ export class SessionManager {
     const days = flags.days || 30;
     const all = flags.all;
     const interactive = flags.interactive;
-    const dryRun = flags.dryRun;
+    const dryRun = flags.dryRun ?? flags['dry-run'];
 
     const files = this._getAllSessions();
     const cutoff = all ? null : Date.now() - days * 24 * 60 * 60 * 1000;
 
     const toDelete = files.filter(f => {
       if (!cutoff) return true;
-      const stat = statSync(f);
-      return stat.mtimeMs < cutoff;
+      const content = readFileSync(f, 'utf-8');
+      const firstLine = content.split('\n')[0];
+      const data = JSON.parse(firstLine);
+      const createdAt = new Date(data.createdAt).getTime();
+      return createdAt < cutoff;
     });
 
     if (toDelete.length === 0) {
@@ -181,9 +184,8 @@ export class SessionManager {
         const data = JSON.parse(firstLine);
         console.log(`  [${i + 1}] ${basename(f)} — ${data.cwd} (${data.createdAt})`);
       });
-      console.log('确定删除这些文件？(y/N) ');
-      // Non-interactive mode: just delete
-      // Interactive stdin is complex in CLI; we skip for now
+      console.log('提示: 使用 --dry-run 预览，或直接不带 --interactive 运行以确认删除。');
+      return;
     }
 
     for (const f of toDelete) {
