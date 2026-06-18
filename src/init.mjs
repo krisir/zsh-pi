@@ -19,7 +19,8 @@ if command -v zsh-ai &>/dev/null; then
   # preexec：在执行 zsh-ai process 前隐藏命令行
   __zsh_ai_preexec() {
     if [[ "$1" = "zsh-ai process "* ]]; then
-      printf '\\033[1A\\033[2K'
+      # 尝试多种方式清除上一行（兼容不同终端）
+      print -n '\\033[1A\\033[2K' 2>/dev/null
     fi
   }
   preexec_functions+=(__zsh_ai_preexec)
