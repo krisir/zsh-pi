@@ -19,9 +19,6 @@ export async function processCommand(text, options = {}) {
   const renderer = new Renderer();
   const session = new SessionManager();
 
-  // 先展示用户提问
-  renderer.showUserInput(text);
-
   // 构建上下文
   let contextParts = [];
 

@@ -68,16 +68,6 @@ export class Renderer {
     this.suggestions = [];
     this._done = false;
     this._thinking = '';
-    this._userInputShown = false;
-  }
-
-  /** 展示用户输入 */
-  showUserInput(text) {
-    if (this._userInputShown) return;
-    this._userInputShown = true;
-    // 向上 2 行各擦一遍，覆盖命令 + 可能的空行
-    process.stdout.write('\x1b[1A\x1b[2K\x1b[1A\x1b[2K\x1b[1A\x1b[2K');
-    console.log(`\n💬 ${text}`);
   }
 
   /** 收到 AI 思考增量（单行动画） */
