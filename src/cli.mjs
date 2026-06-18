@@ -13,7 +13,7 @@ function printHelp() {
 zsh-ai — ZSH 自然语言 AI 处理插件
 
 用法:
-  zsh-ai process <text>          处理自然语言输入（核心）
+  💬 zsh-ai process <text>         处理自然语言输入（核心）
   zsh-ai detect <text>           检测是否为自然语言
   zsh-ai init                    输出 ZSH 集成代码
   zsh-ai session start           开始新会话
