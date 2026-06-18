@@ -75,9 +75,7 @@ export class Renderer {
   showUserInput(text) {
     if (this._userInputShown) return;
     this._userInputShown = true;
-    process.stdout.write(`\n${DIM}${'─'.repeat(40)}${RESET}\n`);
-    console.log(`💬 ${text}`);
-    process.stdout.write(`${DIM}${'─'.repeat(40)}${RESET}\n`);
+    console.log(`\n💬 ${text}`);
   }
 
   /** 收到 AI 思考增量（单行动画） */
