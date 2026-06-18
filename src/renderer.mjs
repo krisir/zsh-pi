@@ -68,12 +68,21 @@ export class Renderer {
     this.suggestions = [];
     this._done = false;
     this._thinking = '';
+    this._userInputShown = false;
+  }
+
+  /** 展示用户输入 */
+  showUserInput(text) {
+    if (this._userInputShown) return;
+    this._userInputShown = true;
+    process.stdout.write(`\n${DIM}${'─'.repeat(40)}${RESET}\n`);
+    console.log(`💬 ${text}`);
+    process.stdout.write(`${DIM}${'─'.repeat(40)}${RESET}\n`);
   }
 
   /** 收到 AI 思考增量（单行动画） */
   onThinking(delta) {
     this._thinking += delta;
-    // 用 \r 在同一行更新 spinner
     const frame = SPINNER[this._thinking.length % SPINNER.length];
     process.stdout.write(`\r${DIM}${frame} 思考中${RESET}`);
   }
