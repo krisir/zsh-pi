@@ -8,15 +8,21 @@ if command -v zsh-ai &>/dev/null; then
     [[ -z "$input" ]] && { zle .accept-line; return; }
 
     if zsh-ai detect "$input" 2>/dev/null; then
-      BUFFER=
-      zle -I
-      zsh-ai process "\${(q)input}"
-      zle .reset-prompt
+      BUFFER="zsh-ai process \${(q)input}"
+      zle .accept-line
     else
       zle .accept-line
     fi
   }
   zle -N accept-line __zsh_ai_accept_line
+
+  # preexec：在执行 zsh-ai process 前隐藏命令行
+  __zsh_ai_preexec() {
+    if [[ "$1" = "zsh-ai process "* ]]; then
+      printf '\\033[1A\\033[2K'
+    fi
+  }
+  preexec_functions+=(__zsh_ai_preexec)
 
   # precmd hook：首次 prompt 前自动启动会话
   typeset -g _ZSH_AI_SESSION_STARTED=0
