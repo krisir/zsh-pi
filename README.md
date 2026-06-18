@@ -63,7 +63,7 @@ npm install -g .
 ### 验证安装
 
 ```bash
-zsh-pi --version     # 应输出 0.1.0
+zsh-pi --version     # 应输出 0.2.0
 zsh-pi --help        # 应显示帮助
 
 # 验证 AI 通路

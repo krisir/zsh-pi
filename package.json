@@ -1,7 +1,7 @@
 {
   "name": "zsh-pi",
   "version": "0.2.0",
-  "description": "ZSH natural language AI assistant — transforms natural language into shell commands using pi-coding-agent",
+  "description": "ZSH 自然语言 AI 助手 — 输入自然语言，命令找不到时自动触发 AI 处理（基于 pi-coding-agent）",
   "type": "module",
   "bin": {
     "zsh-pi": "bin/zsh-ai"
@@ -23,6 +23,7 @@
     "zsh",
     "ai",
     "natural-language",
+    "command-not-found",
     "shell",
     "plugin",
     "oh-my-zsh",
