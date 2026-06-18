@@ -51,31 +51,44 @@ export DEEPSEEK_API_KEY="sk-your-key-here"
 ### 安装 zsh-pi
 
 ```bash
-# 1. 克隆项目
-git clone <仓库地址>
+# 方式 A：通过 npm 安装（推荐）
+npm install -g zsh-pi
+
+# 方式 B：从源码安装
+git clone https://gitee.com/kristar/zsh-pi.git
 cd zsh-pi
+npm install -g .
+```
 
-# 2. 注册 CLI 命令
-npm link
+### 验证安装
 
-# 3. 验证 CLI 可用
+```bash
 zsh-pi --version     # 应输出 0.1.0
 zsh-pi --help        # 应显示帮助
 
-# 4. 验证 AI 通路
+# 验证 AI 通路
 zsh-pi process "你好，请说 hello"
 # 应看到 spinner 动画 + AI 回答，说明 AI 通路正常
+```
 
-# 5. 激活 ZSH 集成（二选一）
-# 方式 A：通过 eval（推荐）
+### 激活 ZSH 集成
+
+完善 `~/.zshrc` 配置，二选一：
+
+**方式 A：通过 eval（推荐）**
+```bash
 echo 'eval "$(zsh-pi init)"' >> ~/.zshrc
+```
 
-# 方式 B：Oh My Zsh 插件
+**方式 B：Oh My Zsh 插件**
+```bash
 mkdir -p ~/.oh-my-zsh/custom/plugins/zsh-pi
 cp zsh-plugin/zsh-pi.plugin.zsh ~/.oh-my-zsh/custom/plugins/zsh-pi/
 # 然后在 ~/.zshrc 的 plugins=(...) 中添加 zsh-pi
+```
 
-# 6. 生效
+生效：
+```bash
 source ~/.zshrc
 ```
 

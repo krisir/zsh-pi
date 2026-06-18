@@ -1,7 +1,7 @@
 {
   "name": "zsh-pi",
   "version": "0.1.0",
-  "description": "ZSH natural language AI assistant — intercepts NLP input, processes via pi-coding-agent",
+  "description": "ZSH natural language AI assistant — transforms natural language into shell commands using pi-coding-agent",
   "type": "module",
   "bin": {
     "zsh-pi": "./bin/zsh-ai"
@@ -10,6 +10,23 @@
     "bin/",
     "src/",
     "zsh-plugin/"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://gitee.com/kristar/zsh-pi.git"
+  },
+  "homepage": "https://gitee.com/kristar/zsh-pi",
+  "bugs": {
+    "url": "https://gitee.com/kristar/zsh-pi/issues"
+  },
+  "keywords": [
+    "zsh",
+    "ai",
+    "natural-language",
+    "shell",
+    "plugin",
+    "oh-my-zsh",
+    "pi-coding-agent"
   ],
   "license": "MIT"
 }
