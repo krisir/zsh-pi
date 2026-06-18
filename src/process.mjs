@@ -91,11 +91,10 @@ export async function processCommand(text, options = {}) {
           turnData.push({ type: 'text', delta: ev.delta, timestamp: new Date().toISOString() });
         }
       } else if (event.type === 'message_end' && event.message) {
-        // Final full message
+        // 取完整文本（仅用于 session 保存和提建议，renderer 已从 text_delta 获取）
         for (const c of event.message.content || []) {
           if (c.type === 'text') {
             currentText = c.text;
-            renderer.onText(c.text);
             turnData.push({ type: 'text', content: c.text, timestamp: new Date().toISOString() });
           }
         }
