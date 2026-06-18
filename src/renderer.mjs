@@ -71,12 +71,10 @@ export class Renderer {
     this._userInputShown = false;
   }
 
-  /** 展示用户输入（先擦除 shell 回显的命令行） */
+  /** 展示用户输入 */
   showUserInput(text) {
     if (this._userInputShown) return;
     this._userInputShown = true;
-    // \x1b[1A = 光标上移一行（擦掉 shell 回显的 "zsh-ai process xxx"）
-    process.stdout.write('\x1b[1A\x1b[2K');
     console.log(`\n💬 ${text}`);
   }
 

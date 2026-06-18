@@ -10,8 +10,10 @@ if command -v zsh-ai &>/dev/null; then
     [[ -z "$input" ]] && { zle .accept-line; return; }
 
     if zsh-ai detect "$input" 2>/dev/null; then
-      BUFFER="zsh-ai process ${(q)input}"
-      zle .accept-line
+      BUFFER=
+      zle -I
+      zsh-ai process "${input}"
+      zle .reset-prompt
     else
       zle .accept-line
     fi
