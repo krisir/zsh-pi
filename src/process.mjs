@@ -52,6 +52,8 @@ export async function processCommand(text, options = {}) {
     stdio: ['pipe', 'pipe', 'pipe'],
     env: { ...process.env },
   });
+  // 立即关闭 stdin，否则 pi 会等待 stdin EOF 而不输出
+  pi.stdin.end();
 
   const turnData = [];
   let currentText = '';
