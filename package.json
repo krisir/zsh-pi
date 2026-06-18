@@ -1,6 +1,6 @@
 {
   "name": "zsh-pi",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "ZSH natural language AI assistant — transforms natural language into shell commands using pi-coding-agent",
   "type": "module",
   "bin": {
