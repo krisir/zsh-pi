@@ -1,10 +1,10 @@
 {
-  "name": "zsh-ai",
+  "name": "zsh-pi",
   "version": "0.1.0",
   "description": "ZSH natural language AI assistant — intercepts NLP input, processes via pi-coding-agent",
   "type": "module",
   "bin": {
-    "zsh-ai": "./bin/zsh-ai"
+    "zsh-pi": "./bin/zsh-ai"
   },
   "files": [
     "bin/",

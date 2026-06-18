@@ -4,8 +4,8 @@ import { join, basename } from 'path';
 import { homedir } from 'os';
 import { randomUUID } from 'crypto';
 
-const DEFAULT_SESSION_DIR = join(homedir(), '.zsh-ai', 'sessions');
-const CURRENT_SESSION_POINTER = join(homedir(), '.zsh-ai', 'current-session');
+const DEFAULT_SESSION_DIR = join(homedir(), '.zsh-pi', 'sessions');
+const CURRENT_SESSION_POINTER = join(homedir(), '.zsh-pi', 'current-session');
 const MAX_CONTEXT_TURNS = 50;
 
 export class SessionManager {
@@ -15,6 +15,11 @@ export class SessionManager {
     this._seq = 0;
     if (!existsSync(this.sessionDir)) {
       mkdirSync(this.sessionDir, { recursive: true });
+    }
+    // 确保 ~/.zsh-pi/ 存在（存放 current-session 指针文件）
+    const piDir = homedir() + '/.zsh-pi';
+    if (!existsSync(piDir)) {
+      mkdirSync(piDir, { recursive: true });
     }
   }
 

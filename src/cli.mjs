@@ -10,19 +10,19 @@ import { join } from 'path';
 
 function printHelp() {
   console.log(`
-zsh-ai — ZSH 自然语言 AI 处理插件
+zsh-pi — ZSH 自然语言 AI 处理插件
 
 用法:
-  💬 zsh-ai process <text>         处理自然语言输入（核心）
-  zsh-ai detect <text>           检测是否为自然语言
-  zsh-ai init                    输出 ZSH 集成代码
-  zsh-ai session start           开始新会话
-  zsh-ai session list            列出所有会话
-  zsh-ai session show <id>       查看会话详情
-  zsh-ai session clean [opts]    清理历史会话
-  zsh-ai suggest [--cwd <dir>]   基于历史建议命令
-  zsh-ai --help                  显示帮助
-  zsh-ai --version               显示版本
+  zsh-pi process <text>           处理自然语言输入（核心）
+  zsh-pi detect <text>            检测是否为自然语言
+  zsh-pi init                     输出 ZSH 集成代码
+  zsh-pi session start            开始新会话
+  zsh-pi session list             列出所有会话
+  zsh-pi session show <id>        查看会话详情
+  zsh-pi session clean [opts]     清理历史会话
+  zsh-pi suggest [--cwd <dir>]    基于历史建议命令
+  zsh-pi --help                   显示帮助
+  zsh-pi --version                显示版本
 
 选项:
   --provider <name>  指定 AI provider

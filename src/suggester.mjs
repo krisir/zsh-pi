@@ -29,7 +29,7 @@ export async function suggestFromHistory(cwd, n = 10) {
         cmd = metaMatch[1].trim();
       }
 
-      if (!cmd || cmd.startsWith('zsh-ai') || cmd.startsWith('#')) continue;
+      if (!cmd || cmd.startsWith('zsh-pi') || cmd.startsWith('#')) continue;
 
       // Filter by directory relevance: if the cwd matches part of the command
       // (commands referencing current dir paths, or git commands are always relevant)
