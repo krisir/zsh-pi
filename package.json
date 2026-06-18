@@ -1,0 +1,15 @@
+{
+  "name": "zsh-ai",
+  "version": "0.1.0",
+  "description": "ZSH natural language AI assistant — intercepts NLP input, processes via pi-coding-agent",
+  "type": "module",
+  "bin": {
+    "zsh-ai": "./bin/zsh-ai"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "zsh-plugin/"
+  ],
+  "license": "MIT"
+}

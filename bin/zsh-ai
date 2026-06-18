@@ -1,0 +1,3 @@
+#!/usr/bin/env node
+// zsh-ai CLI entry point
+import '../src/cli.mjs';
