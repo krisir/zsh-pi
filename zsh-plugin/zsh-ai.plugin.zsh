@@ -4,8 +4,7 @@ if command -v zsh-ai &>/dev/null; then
     local input="$BUFFER"
     [[ -z "$input" ]] && { zle .accept-line; return; }
     if zsh-ai detect "$input" 2>/dev/null; then
-      _ZSH_AI_PENDING="$input"
-      BUFFER=
+      BUFFER="zsh-ai process ${(q)input}"
       zle .accept-line
     else
       zle .accept-line
@@ -15,11 +14,6 @@ if command -v zsh-ai &>/dev/null; then
 
   typeset -g _ZSH_AI_SESSION_STARTED=0
   __zsh_ai_precmd() {
-    if [[ -n "$_ZSH_AI_PENDING" ]]; then
-      local input="$_ZSH_AI_PENDING"
-      _ZSH_AI_PENDING=
-      zsh-ai process "${(q)input}"
-    fi
     if [[ "$_ZSH_AI_SESSION_STARTED" -eq 0 ]]; then
       zsh-ai session start &>/dev/null
       _ZSH_AI_SESSION_STARTED=1

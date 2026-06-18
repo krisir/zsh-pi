@@ -6,10 +6,8 @@ if command -v zsh-ai &>/dev/null; then
   __zsh_ai_accept_line() {
     local input="$BUFFER"
     [[ -z "$input" ]] && { zle .accept-line; return; }
-
     if zsh-ai detect "$input" 2>/dev/null; then
-      _ZSH_AI_PENDING="$input"
-      BUFFER=
+      BUFFER="zsh-ai process \${(q)input}"
       zle .accept-line
     else
       zle .accept-line
@@ -17,16 +15,9 @@ if command -v zsh-ai &>/dev/null; then
   }
   zle -N accept-line __zsh_ai_accept_line
 
-  # precmd：处理待执行的 AI 指令 + 启动会话
+  # precmd hook：首次 prompt 前自动启动会话
   typeset -g _ZSH_AI_SESSION_STARTED=0
   __zsh_ai_precmd() {
-    # 优先处理待执行的 AI 指令
-    if [[ -n "$_ZSH_AI_PENDING" ]]; then
-      local input="$_ZSH_AI_PENDING"
-      _ZSH_AI_PENDING=
-      zsh-ai process "\${(q)input}"
-    fi
-    # 首次 prompt 前启动会话
     if [[ "$_ZSH_AI_SESSION_STARTED" -eq 0 ]]; then
       zsh-ai session start &>/dev/null
       _ZSH_AI_SESSION_STARTED=1
