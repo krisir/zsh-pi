@@ -21,10 +21,18 @@ const ITALIC = '\x1b[3m';
 const UNDERLINE = '\x1b[4m';
 const CODE_BG = '\x1b[48;5;236m';   // dark gray background for code blocks
 
+/** 中文字符/全角字符 = 2 格宽，其余 = 1 */
+function visualLen(s) {
+  return [...s].reduce((n, c) => {
+    const code = c.charCodeAt(0);
+    return n + (code >= 0x4e00 && code <= 0x9fff || code >= 0x3400 && code <= 0x4dbf || code >= 0xff00 && code <= 0xffef || code >= 0x2e80 && code <= 0x2eff ? 2 : 1);
+  }, 0);
+}
+
 function formatMarkdown(text) {
   let result = text;
 
-  // 1) 代码块 ```...``` → 灰色背景 + DIM 文字
+  // 1) 代码块 ```...``` → 灰色背景（优先处理，避免内部格式被后续规则误匹配）
   result = result.replace(/```(\w*)\n?([\s\S]*?)```/g, (_m, _lang, code) => {
     const lines = code.replace(/^\n/, '').split('\n').map(l => ` ${l}`);
     return `${CODE_BG}${DIM}${lines.join('\n')}${RESET}`;
@@ -41,6 +49,41 @@ function formatMarkdown(text) {
 
   // 5) 标题 # ~ ######
   result = result.replace(/^(#{1,6})\s+(.+)$/gm, `${CYAN}${BOLD}$1 $2${RESET}`);
+
+  // 6) 表格（后处理，此时单元格内的 ** ` 等已转为 ANSI）
+  result = result.replace(/(^\|.+\|\n?)+/gm, (block) => {
+    const lines = block.trim().split('\n').filter(l => l.trim());
+    if (lines.length < 2) return block;
+
+    // 滤掉分隔行 (|---|---|---|)
+    const dataLines = lines.filter(l => !/^\|[-| :]+\|$/.test(l.trim()));
+    if (dataLines.length === 0) return block;
+
+    // 解析列
+    const rows = dataLines.map(l =>
+      l.split('|').filter(c => c.trim()).map(c => c.trim())
+    );
+    const colCount = Math.max(...rows.map(r => r.length));
+    if (colCount === 0) return block;
+
+    // 计算每列视觉宽度（不计 ANSI 转义码，中文算 2 格）
+    const widths = Array(colCount).fill(0);
+    for (const row of rows) {
+      for (let i = 0; i < row.length; i++) {
+        widths[i] = Math.max(widths[i], visualLen(row[i].replace(/\x1b\[[0-9;]*m/g, '')));
+      }
+    }
+
+    const hasSeparator = lines.some(l => /^\|[-| :]+\|$/.test(l.trim()));
+    return rows.map((row, ri) => {
+      const cells = row.map((c, ci) => {
+        const curLen = visualLen(c.replace(/\x1b\[[0-9;]*m/g, ''));
+        return `${c}${' '.repeat(Math.max(0, widths[ci] - curLen))}`;
+      });
+      const line = `  ${cells.join('  ')}`;
+      return (hasSeparator && ri === 0) ? `${BOLD}${line}${RESET}` : line;
+    }).join('\n');
+  });
 
   return result;
 }
