@@ -30,30 +30,71 @@ $ zsh-ai process 帮我列出当前目录的文件    ← ZLE Widget 自动拦�
 
 ### 前提条件
 
-- Node.js 18+
-- [pi-coding-agent](https://github.com/nicobailon/pi)（zsh-ai 调用 pi 执行 AI 处理）
-
-### 安装 CLI
+- **Node.js 18+**
+- **[pi-coding-agent](https://github.com/nicobailon/pi)** — zsh-ai 底层调用 pi 执行 AI 处理
+- **AI Provider API Key** — pi 需要配置一个 AI 服务商（如 DeepSeek、OpenAI、Anthropic 等）
 
 ```bash
-# 本地开发模式
-git clone <repo>
-cd zsh-ai
-npm link
+# 检查前置条件
+node --version            # 需要 >= 18
+which pi                  # 确认 pi 已安装
+pi --version              # 确认版本
+
+# 如果没有 pi，通过 brew 安装：
+# brew install pi
+
+# 配置 API Key（以 DeepSeek 为例）
+export DEEPSEEK_API_KEY="sk-your-key-here"
+# 或写入 ~/.pi/agent/settings.json 持久化
 ```
 
-### 激活 ZSH 集成
+### 安装 zsh-ai
 
 ```bash
-# 方式 A：通过 eval (推荐)
+# 1. 克隆项目
+git clone <仓库地址>
+cd zsh-ai
+
+# 2. 注册 CLI 命令
+npm link
+
+# 3. 验证 CLI 可用
+zsh-ai --version     # 应输出 0.1.0
+zsh-ai --help        # 应显示帮助
+
+# 4. 验证 AI 通路
+zsh-ai process "你好，请说 hello"
+# 应看到 spinner 动画 + AI 回答，说明 AI 通路正常
+
+# 5. 激活 ZSH 集成（二选一）
+# 方式 A：通过 eval（推荐）
 echo 'eval "$(zsh-ai init)"' >> ~/.zshrc
 
 # 方式 B：Oh My Zsh 插件
+mkdir -p ~/.oh-my-zsh/custom/plugins/zsh-ai
 cp zsh-plugin/zsh-ai.plugin.zsh ~/.oh-my-zsh/custom/plugins/zsh-ai/
-# 然后在 ~/.zshrc 中添加: plugins=(... zsh-ai ...)
+# 然后在 ~/.zshrc 的 plugins=(...) 中添加 zsh-ai
+
+# 6. 生效
+source ~/.zshrc
 ```
 
-重新打开终端或 `source ~/.zshrc` 即可生效。
+### 确认生效
+
+```bash
+# 输入自然语言 → 应自动触发 AI
+你好
+
+# 正常命令 → 应正常执行，不经过 AI
+ls
+pwd
+
+# 命令行检测
+zsh-ai detect 你好    # exit 0（自然语言）
+zsh-ai detect ls      # exit 1（命令）
+```
+
+> **首次使用**：`zsh-ai process` 第一次调用时 pi 需要冷启动，初始响应约 2-3 秒，后续更快。
 
 ## 使用
 
