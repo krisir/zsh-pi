@@ -12,10 +12,7 @@ const ERASE_LINE = '\x1b[2K';
 const CURSOR_UP = '\x1b[1A';
 
 const SPINNER = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
-const SPINNER_INTERVAL = 100;
-
-const BANNER = `${DIM}╭─${RESET} ${CYAN}zsh-ai${RESET} ${DIM}${'─'.repeat(36)}${RESET}`;
-const BANNER_END = `${DIM}╰${'─'.repeat(46)}${RESET}`;
+const SEPARATOR = `${DIM}${'─'.repeat(40)}${RESET}`;
 
 /**
  * 轻量 markdown → ANSI 终端渲染。
@@ -137,16 +134,11 @@ export class Renderer {
     this._spinnerText = text;
     this._spinnerActive = true;
     this._spinnerFrame = 0;
-    // 输出 spinner 初始帧（使用 \r 在同一行动画）
-    this._drawSpinner();
-    this._spinnerTimer = setInterval(() => {
-      this._spinnerFrame = (this._spinnerFrame + 1) % SPINNER.length;
-      this._drawSpinner();
-    }, SPINNER_INTERVAL);
   }
 
-  _drawSpinner() {
+  _tickSpinner() {
     if (!this._spinnerActive) return;
+    this._spinnerFrame = (this._spinnerFrame + 1) % SPINNER.length;
     const frame = SPINNER[this._spinnerFrame];
     process.stdout.write(`\r${DIM}│ ${frame} ${this._spinnerText}${ERASE_LINE}${RESET}`);
   }
@@ -157,10 +149,7 @@ export class Renderer {
       clearInterval(this._spinnerTimer);
       this._spinnerTimer = null;
     }
-    // 擦掉 spinner 行，准备输出永久内容
-    if (this._lineCount > 0 || this._started) {
-      process.stdout.write(`\r${ERASE_LINE}`);
-    }
+    process.stdout.write(`\r${ERASE_LINE}`);
   }
 
   _replaceSpinnerWith(text) {
@@ -170,23 +159,25 @@ export class Renderer {
 
   /* ─── public API ─── */
 
-  /** 收到 AI 思考增量 */
+  /** 收到 AI 思考增量（每帧推进 spinner） */
   onThinking(delta) {
     if (!this._started) {
       this._started = true;
-      this._log(`\n${BANNER}`);
+      this._log(`\n${SEPARATOR}`);
       this._startSpinner('AI 思考中...');
     }
     this._thinking += delta;
+    // 每次 thinking_delta 推进 spinner → 天然动画（无需 setInterval）
+    this._tickSpinner();
   }
 
   /** 收到工具调用 */
   onToolCall(name, args) {
     this._ensureStarted();
-    this._replaceSpinnerWith(`${YELLOW}│ 🔧 ${BOLD}${name}${RESET}`);
+    this._replaceSpinnerWith(`${YELLOW}🔧 ${BOLD}${name}${RESET}`);
     const argsStr = typeof args === 'object' ? JSON.stringify(args, null, 2) : String(args);
     const shortArgs = argsStr.length > 200 ? argsStr.slice(0, 197) + '...' : argsStr;
-    this._log(`${DIM}│   ${shortArgs}${RESET}`);
+    this._log(`${DIM}  ${shortArgs}${RESET}`);
     this._startSpinner('等待结果...');
   }
 
@@ -197,15 +188,15 @@ export class Renderer {
     const lines = String(content).split('\n');
     const preview = lines.slice(0, 3).join('\n');
     const truncated = lines.length > 3 ? ' …' : '';
-    this._log(`${GREEN}│ 📄${RESET} ${preview}${truncated}`);
-    this._startSpinner('分析结果中...');
+    this._log(`${GREEN}📄${RESET} ${preview}${truncated}`);
+    this._startSpinner('分析结果...');
   }
 
   /** 收到 AI 文本回复（不实时输出，攒到 done() 统一展示） */
   onText(text) {
     if (!this._started) {
       this._started = true;
-      this._log(`\n${BANNER}`);
+      this._log(`\n${SEPARATOR}`);
     }
     this.finalText += text;
   }
@@ -220,34 +211,29 @@ export class Renderer {
     this._stopSpinner();
 
     if (!this.finalText && this._lineCount === 0) return;
-
-    // 如果只有 banner 没有内容，也不擦
     if (!this.finalText && this._lineCount <= 1) return;
 
-    // 擦除 processing 阶段的所有输出
     this._clearAll();
 
-    // 输出最终结果
     const text = formatMarkdown(this.finalText.trim());
     if (text) {
       const lines = text.split('\n');
-      this._log(`\n${GREEN}✔${RESET} ${lines[0]}`);
+      this._log(`\n${lines[0]}`);
       for (let i = 1; i < lines.length; i++) {
-        this._log(`  ${lines[i]}`);
+        this._log(`${lines[i]}`);
       }
     }
 
-    // 命令建议
     if (this.suggestions.length > 0) {
-      this._log(`\n${DIM}建议${RESET}`);
+      this._log(SEPARATOR);
       this.suggestions.forEach(cmd => {
         const parts = cmd.split('//');
         const command = parts[0].trim();
         const comment = parts.slice(1).join('//').trim();
         if (comment) {
-          this._log(`  ${CYAN}>${RESET} ${command}  ${GRAY}# ${comment}${RESET}`);
+          this._log(`${GRAY}>${RESET} ${command}  ${DIM}# ${comment}${RESET}`);
         } else {
-          this._log(`  ${CYAN}>${RESET} ${command}`);
+          this._log(`${GRAY}>${RESET} ${command}`);
         }
       });
     }
@@ -270,7 +256,7 @@ export class Renderer {
   _ensureStarted() {
     if (!this._started) {
       this._started = true;
-      this._log(`\n${BANNER}`);
+      this._log(`\n${SEPARATOR}`);
       this._startSpinner('AI 处理中...');
     }
   }
