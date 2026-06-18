@@ -75,6 +75,8 @@ export class Renderer {
   showUserInput(text) {
     if (this._userInputShown) return;
     this._userInputShown = true;
+    // 向上 2 行各擦一遍，覆盖命令 + 可能的空行
+    process.stdout.write('\x1b[1A\x1b[2K\x1b[1A\x1b[2K\x1b[1A\x1b[2K');
     console.log(`\n💬 ${text}`);
   }
 
