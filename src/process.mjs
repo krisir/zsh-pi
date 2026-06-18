@@ -19,9 +19,26 @@ export async function processCommand(text, options = {}) {
   const renderer = new Renderer();
   const session = new SessionManager();
 
-  // 读取前几次交互作为上下文
-  const context = session.getRecentContext(5);
-  const fullInput = context ? `${context}\n\n用户问题: ${text}` : text;
+  // 构建上下文
+  let contextParts = [];
+
+  // 1. 读取最近的 shell 命令历史
+  try {
+    const recentCmds = await suggestFromHistory(process.cwd(), 15);
+    if (recentCmds.length > 0) {
+      contextParts.push('你最近在终端执行的命令（按时间从近到远）:\n' + recentCmds.join('\n'));
+    }
+  } catch {}
+
+  // 2. 读取之前 AI 对话上下文
+  const sessionContext = session.getRecentContext(5);
+  if (sessionContext) {
+    contextParts.push(sessionContext);
+  }
+
+  const fullInput = contextParts.length > 0
+    ? `${contextParts.join('\n\n')}\n\n用户问题: ${text}`
+    : text;
 
   // 检查 pi 是否可用
   try {
@@ -133,7 +150,7 @@ export async function processCommand(text, options = {}) {
 
   // 1. Parse AI suggest sections from text response
   const suggestMatch = currentText.match(/## 建议|📋|建议(?:的)?(?:下一条)?命令[：:]\s*([\s\S]*?)(?:\n\n|$)/);
-  if (suggestMatch) {
+  if (suggestMatch && suggestMatch[1]) {
     const lines = suggestMatch[1].trim().split('\n');
     for (const line of lines) {
       const clean = line.replace(/^[-*>\s`]+/, '').trim();
