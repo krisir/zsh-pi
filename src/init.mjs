@@ -8,7 +8,8 @@ if command -v zsh-ai &>/dev/null; then
     [[ -z "$input" ]] && { zle .accept-line; return; }
 
     if zsh-ai detect "$input" 2>/dev/null; then
-      BUFFER="zsh-ai process \${(q)input}"
+      _ZSH_AI_PENDING="$input"
+      BUFFER=
       zle .accept-line
     else
       zle .accept-line
@@ -16,18 +17,16 @@ if command -v zsh-ai &>/dev/null; then
   }
   zle -N accept-line __zsh_ai_accept_line
 
-  # preexec：在执行 zsh-ai process 前隐藏命令行
-  __zsh_ai_preexec() {
-    if [[ "$1" = "zsh-ai process "* ]]; then
-      # 尝试多种方式清除上一行（兼容不同终端）
-      print -n '\\033[1A\\033[2K' 2>/dev/null
-    fi
-  }
-  preexec_functions+=(__zsh_ai_preexec)
-
-  # precmd hook：首次 prompt 前自动启动会话
+  # precmd：处理待执行的 AI 指令 + 启动会话
   typeset -g _ZSH_AI_SESSION_STARTED=0
   __zsh_ai_precmd() {
+    # 优先处理待执行的 AI 指令
+    if [[ -n "$_ZSH_AI_PENDING" ]]; then
+      local input="$_ZSH_AI_PENDING"
+      _ZSH_AI_PENDING=
+      zsh-ai process "\${(q)input}"
+    fi
+    # 首次 prompt 前启动会话
     if [[ "$_ZSH_AI_SESSION_STARTED" -eq 0 ]]; then
       zsh-ai session start &>/dev/null
       _ZSH_AI_SESSION_STARTED=1

@@ -1,16 +1,11 @@
 # zsh-ai.plugin.zsh — Oh My Zsh plugin
-# 安装: 放入 ~/.oh-my-zsh/custom/plugins/zsh-ai/
-# 然后在 .zshrc 中: plugins=(... zsh-ai ...)
-
-# 懒加载：仅在 zsh-ai 已安装时生效
 if command -v zsh-ai &>/dev/null; then
-  # ZLE Widget：拦截 accept-line
   __zsh_ai_accept_line() {
     local input="$BUFFER"
     [[ -z "$input" ]] && { zle .accept-line; return; }
-
     if zsh-ai detect "$input" 2>/dev/null; then
-      BUFFER="zsh-ai process ${(q)input}"
+      _ZSH_AI_PENDING="$input"
+      BUFFER=
       zle .accept-line
     else
       zle .accept-line
@@ -18,17 +13,13 @@ if command -v zsh-ai &>/dev/null; then
   }
   zle -N accept-line __zsh_ai_accept_line
 
-  # preexec：在执行 zsh-ai process 前隐藏命令行
-  __zsh_ai_preexec() {
-    if [[ "$1" = "zsh-ai process "* ]]; then
-      printf '\033[1A\033[2K'
-    fi
-  }
-  preexec_functions+=(__zsh_ai_preexec)
-
-  # precmd hook：首次 prompt 前自动启动会话
   typeset -g _ZSH_AI_SESSION_STARTED=0
   __zsh_ai_precmd() {
+    if [[ -n "$_ZSH_AI_PENDING" ]]; then
+      local input="$_ZSH_AI_PENDING"
+      _ZSH_AI_PENDING=
+      zsh-ai process "${(q)input}"
+    fi
     if [[ "$_ZSH_AI_SESSION_STARTED" -eq 0 ]]; then
       zsh-ai session start &>/dev/null
       _ZSH_AI_SESSION_STARTED=1
@@ -36,7 +27,6 @@ if command -v zsh-ai &>/dev/null; then
   }
   precmd_functions+=(__zsh_ai_precmd)
 
-  # command_not_found_handler fallback
   if ! typeset -f __zsh_ai_cnf_backup &>/dev/null; then
     if typeset -f command_not_found_handler &>/dev/null; then
       __zsh_ai_cnf_backup() { command_not_found_handler "$@"; }
@@ -55,7 +45,6 @@ if command -v zsh-ai &>/dev/null; then
     fi
   }
 
-  # Tab 补全
   _zsh_ai_completion() {
     local -a cmds; cmds=(
       'process:处理自然语言输入'
