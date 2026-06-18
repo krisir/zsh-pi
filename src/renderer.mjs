@@ -11,7 +11,11 @@ const RED = '\x1b[31m';
 const ERASE_LINE = '\x1b[2K';
 const CURSOR_UP = '\x1b[1A';
 
-const BANNER = `${CYAN}══════════════════ zsh-ai ══════════════════${RESET}`;
+const SPINNER = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+const SPINNER_INTERVAL = 100;
+
+const BANNER = `${DIM}╭─${RESET} ${CYAN}zsh-ai${RESET} ${DIM}${'─'.repeat(36)}${RESET}`;
+const BANNER_END = `${DIM}╰${'─'.repeat(46)}${RESET}`;
 
 /**
  * 轻量 markdown → ANSI 终端渲染。
@@ -93,9 +97,15 @@ export class Renderer {
     this.finalText = '';
     this.suggestions = [];
     this._started = false;
-    this._lineCount = 0;          // total lines output so far
+    this._lineCount = 0;          // 已输出的永久行数（不含 spinner 行）
     this._thinking = '';
     this._resultFinalized = false;
+
+    // Spinner 状态
+    this._spinnerFrame = 0;
+    this._spinnerTimer = null;
+    this._spinnerText = '';
+    this._spinnerActive = false;
   }
 
   /* ─── helpers ─── */
@@ -113,43 +123,82 @@ export class Renderer {
     this._lineCount -= actual;
   }
 
-  _clearProcessing() {
+  _clearAll() {
+    // 先停 spinner
+    this._stopSpinner();
+    // 再擦永久行
     if (this._lineCount <= 0) return;
     this._erase(this._lineCount);
   }
 
+  /* ─── Spinner ─── */
+
+  _startSpinner(text) {
+    this._spinnerText = text;
+    this._spinnerActive = true;
+    this._spinnerFrame = 0;
+    // 输出 spinner 初始帧（使用 \r 在同一行动画）
+    this._drawSpinner();
+    this._spinnerTimer = setInterval(() => {
+      this._spinnerFrame = (this._spinnerFrame + 1) % SPINNER.length;
+      this._drawSpinner();
+    }, SPINNER_INTERVAL);
+  }
+
+  _drawSpinner() {
+    if (!this._spinnerActive) return;
+    const frame = SPINNER[this._spinnerFrame];
+    process.stdout.write(`\r${DIM}│ ${frame} ${this._spinnerText}${ERASE_LINE}${RESET}`);
+  }
+
+  _stopSpinner() {
+    this._spinnerActive = false;
+    if (this._spinnerTimer) {
+      clearInterval(this._spinnerTimer);
+      this._spinnerTimer = null;
+    }
+    // 擦掉 spinner 行，准备输出永久内容
+    if (this._lineCount > 0 || this._started) {
+      process.stdout.write(`\r${ERASE_LINE}`);
+    }
+  }
+
+  _replaceSpinnerWith(text) {
+    this._stopSpinner();
+    this._log(text);
+  }
+
   /* ─── public API ─── */
 
-  /** 收到 AI 思考增量（不展示内容，仅累计） */
+  /** 收到 AI 思考增量 */
   onThinking(delta) {
     if (!this._started) {
       this._started = true;
       this._log(`\n${BANNER}`);
-      this._log(`${DIM}⏳ AI 处理中...${RESET}`);
+      this._startSpinner('AI 思考中...');
     }
     this._thinking += delta;
   }
 
   /** 收到工具调用 */
   onToolCall(name, args) {
-    // 替换 "⏳ AI 处理中..." 为当前工具调用信息
     this._ensureStarted();
-    // 擦除之前的进度行
-    this._erase(1);
+    this._replaceSpinnerWith(`${YELLOW}│ 🔧 ${BOLD}${name}${RESET}`);
     const argsStr = typeof args === 'object' ? JSON.stringify(args, null, 2) : String(args);
     const shortArgs = argsStr.length > 200 ? argsStr.slice(0, 197) + '...' : argsStr;
-    this._log(`${YELLOW}🔧 执行工具: ${BOLD}${name}${RESET}`);
-    this._log(`${YELLOW}  参数: ${shortArgs}${RESET}`);
+    this._log(`${DIM}│   ${shortArgs}${RESET}`);
+    this._startSpinner('等待结果...');
   }
 
   /** 收到工具结果 */
   onToolResult(content) {
     this._ensureStarted();
+    this._stopSpinner();
     const lines = String(content).split('\n');
-    const preview = lines.slice(0, 5).join('\n');
-    const truncated = lines.length > 5 ? '\n  ...' : '';
-    this._log(`${GREEN}📄 结果:${RESET}`);
-    this._log(`  ${preview}${truncated}`);
+    const preview = lines.slice(0, 3).join('\n');
+    const truncated = lines.length > 3 ? ' …' : '';
+    this._log(`${GREEN}│ 📄${RESET} ${preview}${truncated}`);
+    this._startSpinner('分析结果中...');
   }
 
   /** 收到 AI 文本回复（不实时输出，攒到 done() 统一展示） */
@@ -168,53 +217,61 @@ export class Renderer {
 
   /** 完成渲染：擦除所有中间输出，仅展示最终结果 */
   done() {
+    this._stopSpinner();
+
     if (!this.finalText && this._lineCount === 0) return;
 
-    // 擦除 processing 阶段的所有输出（横幅 + 进度 + 工具调用/结果）
-    this._clearProcessing();
+    // 如果只有 banner 没有内容，也不擦
+    if (!this.finalText && this._lineCount <= 1) return;
 
-    // 输出最终结果（含 markdown 渲染）
+    // 擦除 processing 阶段的所有输出
+    this._clearAll();
+
+    // 输出最终结果
     const text = formatMarkdown(this.finalText.trim());
     if (text) {
       const lines = text.split('\n');
-      this._log(`\n${RESET}${lines[0]}`);
+      this._log(`\n${GREEN}✔${RESET} ${lines[0]}`);
       for (let i = 1; i < lines.length; i++) {
-        this._log(`${lines[i]}`);
+        this._log(`  ${lines[i]}`);
       }
     }
 
     // 命令建议
     if (this.suggestions.length > 0) {
-      this._log(`\n${CYAN}📋 建议下一条命令:${RESET}`);
+      this._log(`\n${DIM}建议${RESET}`);
       this.suggestions.forEach(cmd => {
-        const [command, ...commentParts] = cmd.split('//');
-        const comment = commentParts.join('//').trim();
+        const parts = cmd.split('//');
+        const command = parts[0].trim();
+        const comment = parts.slice(1).join('//').trim();
         if (comment) {
-          this._log(`  ${BOLD}> ${command.trim()}${RESET} ${GRAY}# ${comment}${RESET}`);
+          this._log(`  ${CYAN}>${RESET} ${command}  ${GRAY}# ${comment}${RESET}`);
         } else {
-          this._log(`  ${BOLD}> ${cmd.trim()}${RESET}`);
+          this._log(`  ${CYAN}>${RESET} ${command}`);
         }
       });
     }
 
-    this._log(`${CYAN}────────────────────────────────────────────────${RESET}\n`);
     this._resultFinalized = true;
   }
 
   /** 输出错误信息 */
   error(msg) {
-    console.error(`\n${RED}❌ ${msg}${RESET}\n`);
+    this._stopSpinner();
+    this._clearAll();
+    console.error(`\n${RED}✘ ${msg}${RESET}\n`);
   }
 
   /** 警告信息 */
   warn(msg) {
-    console.error(`\n${YELLOW}⚠️  ${msg}${RESET}\n`);
+    console.error(`\n${YELLOW}⚠ ${msg}${RESET}\n`);
   }
 
   _ensureStarted() {
     if (!this._started) {
       this._started = true;
       this._log(`\n${BANNER}`);
+      this._startSpinner('AI 处理中...');
     }
   }
 }
