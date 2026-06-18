@@ -77,7 +77,6 @@ zsh-ai suggest
 
 # 选项
 zsh-ai process "..." --provider deepseek --model deepseek-v4-flash
-zsh-ai process "..." --no-suggest  # 不显示命令建议
 ```
 
 ## 配置

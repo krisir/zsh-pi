@@ -145,31 +145,15 @@ export async function processCommand(text, options = {}) {
 
   session.appendTurn(text, finalTurnData);
 
-  // Suggestions
+  // Suggestions — 仅在 AI 回复中自然包含时展示
   const suggestions = [];
 
-  // 1. Parse AI suggest sections from text response
   const suggestMatch = currentText.match(/## 建议|📋|建议(?:的)?(?:下一条)?命令[：:]\s*([\s\S]*?)(?:\n\n|$)/);
   if (suggestMatch && suggestMatch[1]) {
     const lines = suggestMatch[1].trim().split('\n');
     for (const line of lines) {
       const clean = line.replace(/^[-*>\s`]+/, '').trim();
       if (clean) suggestions.push(clean);
-    }
-  }
-
-  // 2. Supplement from history
-  if (!options.noSuggest) {
-    try {
-      const historyCmds = await suggestFromHistory(process.cwd(), 10);
-      for (const h of historyCmds) {
-        if (!suggestions.some(s => s.startsWith(h.split(/\s+/)[0]))) {
-          suggestions.push(h);
-          if (suggestions.length >= 5) break;
-        }
-      }
-    } catch {
-      // History reading is best-effort
     }
   }
 

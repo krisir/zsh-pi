@@ -28,7 +28,6 @@ zsh-ai — ZSH 自然语言 AI 处理插件
   --provider <name>  指定 AI provider
   --model <id>       指定 AI model
   --debug            输出调试日志
-  --no-suggest       不显示命令建议
 `);
 }
 
@@ -50,7 +49,7 @@ async function main() {
   for (let i = 1; i < args.length; i++) {
     if (args[i].startsWith('--')) {
       if (flagKeys.has(args[i])) {
-        if (args[i] === '--debug' || args[i] === '--no-suggest' || args[i] === '--all' || args[i] === '--interactive' || args[i] === '--dry-run') {
+        if (args[i] === '--debug' || args[i] === '--all' || args[i] === '--interactive' || args[i] === '--dry-run') {
           flags[args[i].slice(2)] = true;
         } else {
           flags[args[i].slice(2)] = args[++i];
@@ -69,7 +68,7 @@ async function main() {
       if (!text) { console.error('请提供要处理的文本'); process.exit(1); }
       const provider = flags.provider;
       const model = flags.model;
-      await processCommand(text, { provider, model, noSuggest: !!flags['no-suggest'], debug: !!flags.debug });
+      await processCommand(text, { provider, model, debug: !!flags.debug });
       break;
     }
     case 'detect': {
