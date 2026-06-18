@@ -12,6 +12,8 @@ const RED = '\x1b[31m';
 const ERASE_LINE = '\x1b[2K';
 const CURSOR_UP = '\x1b[1A';
 
+const BANNER = `\n${CYAN}══════════════════ zsh-ai ══════════════════${RESET}`;
+
 export class Renderer {
   constructor() {
     this.thinking = '';
@@ -20,14 +22,21 @@ export class Renderer {
     this.suggestions = [];
     this._thinkingLineCount = 0;
     this._started = false;
+    this._textLineCount = 0;
+    this._textRendered = false;
+  }
+
+  /** 确保起始横幅已输出 */
+  _ensureStarted() {
+    if (!this._started) {
+      this._started = true;
+      console.log(BANNER);
+    }
   }
 
   /** 收到 AI 思考增量 */
   onThinking(delta) {
-    if (!this._started) {
-      this._started = true;
-      console.log(`\n${CYAN}══════════════════ zsh-ai ══════════════════${RESET}`);
-    }
+    this._ensureStarted();
     this.thinking += delta;
     // Render thinking line (update in place if we've already printed one)
     if (this._thinkingLineCount > 0) {
@@ -44,16 +53,18 @@ export class Renderer {
 
   /** 收到工具调用 */
   onToolCall(name, args) {
+    this._ensureStarted();
     this._finalizeThinking();
     const argsStr = typeof args === 'object' ? JSON.stringify(args, null, 2) : String(args);
     const shortArgs = argsStr.length > 200 ? argsStr.slice(0, 197) + '...' : argsStr;
-    console.log(`\n${YELLOW}🔧 执行工具: ${BOLD}${name}${RESET}`);
+    console.log(`${YELLOW}🔧 执行工具: ${BOLD}${name}${RESET}`);
     console.log(`${YELLOW}  参数: ${shortArgs}${RESET}`);
     this.toolCalls.push({ name, args: shortArgs });
   }
 
   /** 收到工具结果 */
   onToolResult(content) {
+    this._ensureStarted();
     const lines = String(content).split('\n');
     const preview = lines.slice(0, 5).join('\n');
     const truncated = lines.length > 5 ? '\n  ...' : '';
@@ -66,8 +77,9 @@ export class Renderer {
 
   /** 收到 AI 文本回复 */
   onText(text) {
+    this._ensureStarted();
     this.finalText += text;
-    // Re-render the final text section
+    // Re-render the final text section (supports incremental updates)
     this._renderFinalText();
   }
 
@@ -92,7 +104,7 @@ export class Renderer {
     if (!this.finalText && this.toolCalls.length === 0 && !this._started) {
       return;
     }
-    if (this.finalText && !this.suggestions.length) {
+    if (this.finalText && !this.suggestions.length && !this._textRendered) {
       this._renderFinalText();
     }
     console.log(`\n${CYAN}══════════════════════════════════════════════${RESET}\n`);
@@ -110,18 +122,25 @@ export class Renderer {
 
   _finalizeThinking() {
     if (this._thinkingLineCount > 0) {
-      process.stdout.write('\n');
+      console.log();
       this._thinkingLineCount = 0;
     }
   }
 
   _renderFinalText() {
     if (!this.finalText) return;
-    // Remove old final text lines if any
+
+    // Erase previously rendered lines for incremental update
+    for (let i = 0; i < this._textLineCount; i++) {
+      process.stdout.write(CURSOR_UP + ERASE_LINE);
+    }
+
     const lines = this.finalText.trim().split('\n');
     console.log(`\n${RESET}💬 ${lines[0]}`);
     for (let i = 1; i < lines.length; i++) {
       console.log(`  ${lines[i]}`);
     }
+    this._textLineCount = lines.length + 1; // blank line + content lines
+    this._textRendered = true;
   }
 }
