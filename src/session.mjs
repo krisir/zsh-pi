@@ -5,6 +5,7 @@ import { homedir } from 'os';
 import { randomUUID } from 'crypto';
 
 const DEFAULT_SESSION_DIR = join(homedir(), '.zsh-ai', 'sessions');
+const CURRENT_SESSION_POINTER = join(homedir(), '.zsh-ai', 'current-session');
 const MAX_CONTEXT_TURNS = 50;
 
 export class SessionManager {
@@ -21,10 +22,19 @@ export class SessionManager {
    * 获取当前会话文件路径（惰性初始化）
    */
   getCurrentSessionFile() {
-    if (!this._currentSessionFile) {
-      this.start();
-    }
-    return this._currentSessionFile;
+    if (this._currentSessionFile) return this._currentSessionFile;
+    // Try to resume existing session from pointer file
+    try {
+      const savedPath = readFileSync(CURRENT_SESSION_POINTER, 'utf-8').trim();
+      if (savedPath && existsSync(savedPath)) {
+        this._currentSessionFile = savedPath;
+        // Count existing turns to set seq correctly
+        const content = readFileSync(savedPath, 'utf-8');
+        this._seq = content.split('\n').filter(l => l.includes('"type":"turn"')).length;
+        return savedPath;
+      }
+    } catch {}
+    return this.start();
   }
 
   /**
@@ -49,6 +59,9 @@ export class SessionManager {
       pid: process.pid,
     };
     writeFileSync(filepath, JSON.stringify(header) + '\n', 'utf-8');
+    // Save current session pointer for cross-process resume
+    try { mkdirSync(join(homedir(), '.zsh-ai'), { recursive: true }); } catch {}
+    writeFileSync(CURRENT_SESSION_POINTER, this._currentSessionFile, 'utf-8');
     return filepath;
   }
 

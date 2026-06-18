@@ -3,9 +3,6 @@ export function getInitScript() {
   return `# zsh-ai 初始化
 # 如果 zsh-ai 未安装，静默跳过
 if command -v zsh-ai &>/dev/null; then
-  # 保存原始 accept-line
-  __zsh_ai_orig_accept_line() { zle .accept-line; }
-
   # ZLE Widget：拦截 accept-line
   __zsh_ai_accept_line() {
     local input="$BUFFER"

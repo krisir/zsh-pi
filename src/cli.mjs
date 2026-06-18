@@ -69,7 +69,7 @@ async function main() {
       if (!text) { console.error('请提供要处理的文本'); process.exit(1); }
       const provider = flags.provider;
       const model = flags.model;
-      await processCommand(text, { provider, model, noSuggest: !!flags['no-suggest'] });
+      await processCommand(text, { provider, model, noSuggest: !!flags['no-suggest'], debug: !!flags.debug });
       break;
     }
     case 'detect': {
@@ -109,7 +109,7 @@ async function main() {
       // (handles `zsh-ai 列出文件` → subcommand is the NLP)
       const text = args.join(' ');
       if (isNaturalLanguage(text)) {
-        await processCommand(text, {});
+        await processCommand(text, { debug: !!flags.debug });
       } else {
         console.error(`未知命令: ${subcommand}`);
         printHelp();

@@ -51,16 +51,12 @@ export async function processCommand(text, options = {}) {
   const pi = spawn('pi', args, {
     stdio: ['pipe', 'pipe', 'pipe'],
     env: { ...process.env },
-    timeout: PI_TIMEOUT,
   });
 
   const turnData = [];
-  let currentThinking = '';
   let currentText = '';
-  let timedOut = false;
 
   const timeout = setTimeout(() => {
-    timedOut = true;
     pi.kill();
     renderer.error('AI 处理超时，请重试');
   }, PI_TIMEOUT);
@@ -76,9 +72,8 @@ export async function processCommand(text, options = {}) {
         const ev = event.assistantMessageEvent;
 
         if (ev.type === 'thinking_start') {
-          currentThinking = '';
+          // No-op: thinking state tracked via turnData
         } else if (ev.type === 'thinking_delta') {
-          currentThinking += ev.delta || '';
           renderer.onThinking(ev.delta || '');
           turnData.push({ type: 'thinking', delta: ev.delta, timestamp: new Date().toISOString() });
         } else if (ev.type === 'tool_call') {
