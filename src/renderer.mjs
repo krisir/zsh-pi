@@ -13,6 +13,38 @@ const CURSOR_UP = '\x1b[1A';
 
 const BANNER = `${CYAN}══════════════════ zsh-ai ══════════════════${RESET}`;
 
+/**
+ * 轻量 markdown → ANSI 终端渲染。
+ * 处理常见格式：代码块、行内代码、粗体、标题、列表。
+ */
+const ITALIC = '\x1b[3m';
+const UNDERLINE = '\x1b[4m';
+const CODE_BG = '\x1b[48;5;236m';   // dark gray background for code blocks
+
+function formatMarkdown(text) {
+  let result = text;
+
+  // 1) 代码块 ```...``` → 灰色背景 + DIM 文字
+  result = result.replace(/```(\w*)\n?([\s\S]*?)```/g, (_m, _lang, code) => {
+    const lines = code.replace(/^\n/, '').split('\n').map(l => ` ${l}`);
+    return `${CODE_BG}${DIM}${lines.join('\n')}${RESET}`;
+  });
+
+  // 2) 行内代码 `code` → GRAY 文字
+  result = result.replace(/`([^`]+)`/g, `${GRAY}$1${RESET}`);
+
+  // 3) **粗体**
+  result = result.replace(/\*\*(.+?)\*\*/g, `${BOLD}$1${RESET}`);
+
+  // 4) *斜体*
+  result = result.replace(/\B\*([^*]+)\*\B/g, `${ITALIC}$1${RESET}`);
+
+  // 5) 标题 # ~ ######
+  result = result.replace(/^(#{1,6})\s+(.+)$/gm, `${CYAN}${BOLD}$1 $2${RESET}`);
+
+  return result;
+}
+
 export class Renderer {
   constructor() {
     this.finalText = '';
@@ -98,8 +130,8 @@ export class Renderer {
     // 擦除 processing 阶段的所有输出（横幅 + 进度 + 工具调用/结果）
     this._clearProcessing();
 
-    // 输出最终结果
-    const text = this.finalText.trim();
+    // 输出最终结果（含 markdown 渲染）
+    const text = formatMarkdown(this.finalText.trim());
     if (text) {
       const lines = text.split('\n');
       this._log(`\n${RESET}${lines[0]}`);
